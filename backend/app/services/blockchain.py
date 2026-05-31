@@ -1,5 +1,9 @@
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
+try:
+    from web3.middleware import ExtraDataToPOAMiddleware as geth_poa_middleware
+except ImportError:
+    # For older web3.py versions
+    from web3.middleware import geth_poa_middleware
 from eth_account import Account
 import json
 import os
@@ -8,6 +12,10 @@ import logging
 from pathlib import Path
 from fastapi import HTTPException
 from dotenv import load_dotenv
+
+from app.services.etherscan import EtherscanService
+from app.services.cache import CacheService
+from app.utils.graph_features import compute_graph_features
 
 # Load environment variables
 load_dotenv()
@@ -19,6 +27,16 @@ class BlockchainService:
     
     def __init__(self):
         """Initialize Web3 connection"""
+        # Shared cache (Redis → in-memory fallback) used by EtherscanService and graph features
+        self._cache = CacheService(redis_url=os.getenv("REDIS_URL", ""))
+
+        # Etherscan enrichment service (provides real contract age, gas median, tx count)
+        self.etherscan = EtherscanService(
+            api_key=os.getenv("ETHERSCAN_API_KEY", ""),
+            polygon_api_key=os.getenv("POLYGONSCAN_API_KEY", ""),
+            cache=self._cache,
+        )
+
         # Get Infura API key
         infura_key = os.getenv("INFURA_API_KEY", "")
         
@@ -134,52 +152,104 @@ class BlockchainService:
             tx = w3.eth.get_transaction(tx_hash)
             receipt = w3.eth.get_transaction_receipt(tx_hash)
             
-            # Get sender transaction count
+            # Current confirmed tx count for the sender (= current nonce)
             sender_tx_count = w3.eth.get_transaction_count(tx['from'])
-            
-            # Get receiver transaction count (if to address exists)
+
+            # Receiver tx count (if to address exists)
             receiver_tx_count = 0
             if tx['to']:
                 receiver_tx_count = w3.eth.get_transaction_count(tx['to'])
-            
-            # Get block for timestamp
+
+            # Block data — gasUsed / gasLimit gives the real block utilisation ratio
             block = w3.eth.get_block(tx['blockNumber'])
-            
-            # Calculate time of day (0-23 hours)
-            from datetime import datetime
             timestamp = block['timestamp']
+            block_gas_limit = block.get('gasLimit', 30_000_000)
+            block_gas_used  = block.get('gasUsed', 0)
+            block_gas_used_ratio = float(block_gas_used) / float(block_gas_limit) if block_gas_limit else 0.5
+
+            from datetime import datetime
             time_of_day = datetime.fromtimestamp(timestamp).hour
-            
-            # Check if it's a contract interaction
+
             contract_interaction = 1 if (tx['to'] and len(tx.get('input', '0x')) > 2) else 0
-            
-            # Count unique addresses in transaction
             unique_addresses = len(set([tx['from'], tx['to']]) - {None})
-            
-            # Extract token transfers from logs (simplified)
             num_transfers = len(receipt.get('logs', []))
-            
-            # Convert values
-            amount = float(w3.from_wei(tx['value'], 'ether'))
+
+            amount    = float(w3.from_wei(tx['value'], 'ether'))
             gas_price = float(w3.from_wei(tx['gasPrice'], 'gwei'))
-            gas_used = receipt['gasUsed']
-            
+            gas_used  = receipt['gasUsed']
+
+            # ── Etherscan enrichment (all calls are best-effort; None = use fallback) ──
+            to_address = tx['to'] if tx['to'] else ''
+
+            # Real contract age — replaces the hardcoded 30-day estimate
+            contract_age = await self.etherscan.get_contract_age_days(to_address, network)
+
+            # Real network median gas price — replaces the hardcoded 50 Gwei constant
+            median_gas = await self.etherscan.get_network_gas_median(network)
+
+            # Real confirmed sender tx count — Etherscan value preferred over Web3 nonce
+            # because Web3 nonce counts only outgoing txs; Etherscan total may include
+            # internal txs on some networks. Falls back to the Web3 value if API fails.
+            etherscan_tx_count = await self.etherscan.get_account_tx_count(tx['from'], network)
+            if etherscan_tx_count is not None:
+                sender_tx_count = etherscan_tx_count
+
+            # ── Graph features (new — require Etherscan history lookup) ─────────
+            # sender_fraud_neighbor_ratio: indirect fraud exposure via recent counterparties
+            # sender_account_age_days: freshly-created wallets are higher risk
+            graph = await compute_graph_features(
+                sender=tx['from'],
+                network=network,
+                api_key=os.getenv("ETHERSCAN_API_KEY", ""),
+                cache=self._cache,
+            )
+
+            logger.info(
+                f"Enrichment for {tx_hash[:12]}…: "
+                f"contract_age={contract_age} days, "
+                f"median_gas={median_gas} Gwei, "
+                f"sender_tx_count={sender_tx_count}, "
+                f"block_gas_ratio={block_gas_used_ratio:.3f}, "
+                f"fraud_neighbor_ratio={graph['sender_fraud_neighbor_ratio']:.3f}, "
+                f"account_age={graph['sender_account_age_days']:.1f} days"
+            )
+
             return {
                 'hash': tx_hash,
                 'from': tx['from'],
-                'to': tx['to'] if tx['to'] else '',
-                'amount': amount,
-                'gas_price': gas_price,
-                'gas_used': gas_used,
-                'num_transfers': num_transfers,
-                'unique_addresses': unique_addresses,
-                'time_of_day': time_of_day,
+                'to':   to_address,
+
+                # Raw Web3 fields (consumed by extract_features)
+                'value':       int(tx['value']),       # Wei
+                'gasPrice':    int(tx['gasPrice']),    # Wei
+                'gas':         int(tx.get('gas', gas_used)),
+                'nonce':       int(tx['nonce']),
+                'input':       tx.get('input', '0x'),
+                'blockNumber': int(tx['blockNumber']),
+
+                # Enriched fields — extract_features reads these first before
+                # falling back to its own estimates
+                'sender_tx_count':             sender_tx_count,
+                'block_gas_used_ratio':        block_gas_used_ratio,
+                'contract_age':                contract_age,   # None if EOA or API failed
+                'median_gas':                  median_gas,     # None if API failed
+
+                # Graph features (new — require Etherscan history lookup)
+                'sender_fraud_neighbor_ratio': graph['sender_fraud_neighbor_ratio'],
+                'sender_account_age_days':     graph['sender_account_age_days'],
+
+                # Pre-processed fields kept for backward compatibility
+                'amount':             amount,
+                'gas_price':          gas_price,
+                'gas_used':           gas_used,
+                'num_transfers':      num_transfers,
+                'unique_addresses':   unique_addresses,
+                'time_of_day':        time_of_day,
                 'contract_interaction': contract_interaction,
-                'sender_tx_count': sender_tx_count,
-                'receiver_tx_count': receiver_tx_count,
-                'block_number': tx['blockNumber'],
-                'timestamp': timestamp,
-                'network': network
+                'receiver_tx_count':  receiver_tx_count,
+                'block_number':       tx['blockNumber'],
+                'timestamp':          timestamp,
+                'network':            network,
             }
         except Exception as e:
             logger.error(f"Error fetching transaction {tx_hash}: {e}")

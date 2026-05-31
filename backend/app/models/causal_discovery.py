@@ -82,8 +82,10 @@ class NOTEARSCausalDiscovery:
         X_np = X.values
         n, d = X_np.shape
         
-        # Standardize data
-        X_np = (X_np - X_np.mean(axis=0)) / X_np.std(axis=0)
+        # Standardize data; guard against zero-variance (constant) features
+        std = X_np.std(axis=0)
+        std[std == 0] = 1.0  # Constant features carry no information; keep them as-is
+        X_np = (X_np - X_np.mean(axis=0)) / std
         
         # Initialize weights
         W = np.zeros((d, d))
@@ -128,8 +130,39 @@ class NOTEARSCausalDiscovery:
             if iter_num % 10 == 0:
                 logger.info(f"Iter {iter_num}: h={h_val:.6e}, rho={rho:.2e}")
         
-        # Threshold small weights
-        W[np.abs(W) < 0.3] = 0
+        # Threshold small weights to ensure DAG property
+        # Use adaptive threshold based on weight distribution
+        weight_threshold = max(0.05, np.percentile(np.abs(W), 50))  # At least 0.05 or median
+        logger.info(f"Using weight threshold: {weight_threshold:.3f}")
+        W[np.abs(W) < weight_threshold] = 0
+        
+        # Remove cycles if any exist
+        logger.info("Checking for cycles...")
+        temp_graph = nx.DiGraph()
+        feature_names_list = list(feature_names) if hasattr(feature_names, '__iter__') and not isinstance(feature_names, str) else feature_names
+        
+        for i, cause in enumerate(feature_names_list):
+            for j, effect in enumerate(feature_names_list):
+                if W[i, j] != 0:
+                    temp_graph.add_edge(cause, effect, weight=float(W[i, j]))
+        
+        # Remove weakest edges until DAG
+        while not nx.is_directed_acyclic_graph(temp_graph) and temp_graph.number_of_edges() > 0:
+            # Find weakest edge and remove it
+            edges = [(u, v, abs(data['weight'])) for u, v, data in temp_graph.edges(data=True)]
+            edges.sort(key=lambda x: x[2])
+            weakest_edge = edges[0]
+            temp_graph.remove_edge(weakest_edge[0], weakest_edge[1])
+            logger.info(f"Removed cycle edge: {weakest_edge[0]} → {weakest_edge[1]} (weight: {weakest_edge[2]:.3f})")
+        
+        # Update W matrix based on final DAG
+        W_final = np.zeros_like(W)
+        for i, cause in enumerate(feature_names_list):
+            for j, effect in enumerate(feature_names_list):
+                if temp_graph.has_edge(cause, effect):
+                    W_final[i, j] = temp_graph[cause][effect]['weight']
+        
+        W = W_final
         
         self.W = W
         

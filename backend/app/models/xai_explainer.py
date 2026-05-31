@@ -38,9 +38,18 @@ class XAIExplainer:
                     logger.warning(f"TreeExplainer failed, using mock explainer: {e}")
                     return self._mock_explanation(features)
             
-            # Convert to DataFrame
+            # Convert to DataFrame, aligning column order to model training order
             df = pd.DataFrame([features])
-            
+            feature_names = (
+                getattr(model, 'feature_names', None) or
+                getattr(model, 'feature_names_in_', None)
+            )
+            if feature_names is not None:
+                for col in feature_names:
+                    if col not in df.columns:
+                        df[col] = 0
+                df = df[list(feature_names)]
+
             # Calculate SHAP values
             shap_values = self.explainer.shap_values(df)
             
@@ -71,11 +80,18 @@ class XAIExplainer:
                 for name, importance in sorted_features[:5]
             ]
             
+            # expected_value is a list for binary classifiers (one per class); take class-1 value
+            raw_ev = getattr(self.explainer, 'expected_value', 0.5)
+            if hasattr(raw_ev, '__len__'):
+                base_value = float(raw_ev[1]) if len(raw_ev) > 1 else float(raw_ev[0])
+            else:
+                base_value = float(raw_ev)
+
             return {
                 'shap_values': shap_values[0].tolist() if hasattr(shap_values[0], 'tolist') else list(shap_values[0]),
                 'feature_importance': feature_importance,
                 'top_features': top_features,
-                'base_value': float(self.explainer.expected_value) if hasattr(self.explainer, 'expected_value') else 0.5
+                'base_value': base_value
             }
             
         except Exception as e:

@@ -3,38 +3,38 @@
 import { useState, useEffect } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import Link from 'next/link';
-import { Shield, ArrowLeft, TrendingUp, AlertTriangle, Activity, Clock } from 'lucide-react';
+import { Shield, ArrowLeft, TrendingUp, AlertTriangle, Activity, Clock, Zap } from 'lucide-react';
+import { apiGet } from '@/lib/api';
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats]           = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [metrics, setMetrics]        = useState<any>(null);
+  const [alert, setAlert]            = useState<any>(null);
+  const [loading, setLoading]        = useState(true);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  useEffect(() => { fetchDashboardData(); }, []);
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch audit trail
-      const response = await fetch('http://localhost:8000/api/audit/');
-      const data = await response.json();
-      
-      setTransactions(data.audit_trail || []);
-      
-      // Calculate stats
-      const totalTx = data.audit_trail?.length || 0;
-      const malicious = data.audit_trail?.filter((tx: any) => tx.is_malicious).length || 0;
-      const avgRisk = totalTx > 0 
-        ? data.audit_trail.reduce((sum: number, tx: any) => sum + tx.risk_score, 0) / totalTx 
+      // Audit trail
+      const data: any = await apiGet('/api/audit/');
+      const trail = data.audit_trail || [];
+      setTransactions(trail);
+
+      const totalTx    = trail.length;
+      const malicious  = trail.filter((tx: any) => tx.is_malicious).length;
+      const avgRisk    = totalTx > 0
+        ? trail.reduce((s: number, tx: any) => s + tx.risk_score, 0) / totalTx
         : 0;
-      
-      setStats({
-        total: totalTx,
-        malicious,
-        legitimate: totalTx - malicious,
-        avgRisk: avgRisk.toFixed(1),
-      });
+      setStats({ total: totalTx, malicious, legitimate: totalTx - malicious, avgRisk: avgRisk.toFixed(1) });
+
+      // Live metrics (best-effort — no crash if unavailable)
+      try {
+        const m: any = await apiGet('/api/metrics');
+        setMetrics(m);
+        setAlert(m.alert);
+      } catch { /* metrics unavailable — silently skip */ }
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
     } finally {
@@ -98,6 +98,56 @@ export default function DashboardPage() {
                 <p className="text-4xl font-bold text-white">{stats?.avgRisk || 0}</p>
               </div>
             </div>
+
+            {/* Live Metrics Panel */}
+            {metrics && (
+              <div className="bg-gray-800/50 backdrop-blur-lg rounded-2xl p-6 mb-8">
+                <h2 className="text-xl font-bold text-white mb-4 flex items-center space-x-2">
+                  <Zap className="w-5 h-5 text-yellow-400" />
+                  <span>Live Metrics</span>
+                  {alert?.triggered && (
+                    <span className="ml-3 px-2 py-0.5 text-xs bg-red-500 text-white rounded-full animate-pulse">
+                      DRIFT ALERT
+                    </span>
+                  )}
+                </h2>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div className="bg-gray-900/50 rounded-lg p-3 text-center">
+                    <p className="text-gray-400 text-xs mb-1">Requests (1h)</p>
+                    <p className="text-white font-bold text-xl">{metrics.request_stats?.last_1h?.requests ?? '—'}</p>
+                  </div>
+                  <div className="bg-gray-900/50 rounded-lg p-3 text-center">
+                    <p className="text-gray-400 text-xs mb-1">Fraud Rate (24h)</p>
+                    <p className="text-orange-400 font-bold text-xl">
+                      {metrics.analysis_24h?.fraud_rate != null
+                        ? `${(metrics.analysis_24h.fraud_rate * 100).toFixed(1)}%`
+                        : '—'}
+                    </p>
+                  </div>
+                  <div className="bg-gray-900/50 rounded-lg p-3 text-center">
+                    <p className="text-gray-400 text-xs mb-1">p95 Latency</p>
+                    <p className="text-blue-400 font-bold text-xl">
+                      {metrics.request_stats?.last_1h?.p95_ms != null
+                        ? `${metrics.request_stats.last_1h.p95_ms}ms`
+                        : '—'}
+                    </p>
+                  </div>
+                  <div className="bg-gray-900/50 rounded-lg p-3 text-center">
+                    <p className="text-gray-400 text-xs mb-1">Errors (1h)</p>
+                    <p className={`font-bold text-xl ${(metrics.request_stats?.last_1h?.errors ?? 0) > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                      {metrics.request_stats?.last_1h?.errors ?? 0}
+                    </p>
+                  </div>
+                </div>
+
+                {alert?.triggered && (
+                  <div className="p-3 bg-red-900/30 border border-red-500 rounded-lg text-sm text-red-300">
+                    {alert.message}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Transaction List */}
             <div className="bg-gray-800/50 backdrop-blur-lg rounded-2xl p-8">

@@ -1,10 +1,24 @@
 from fastapi import APIRouter, Query
 from typing import List
 import logging
+from pymongo import MongoClient
+from datetime import datetime
 from app.models.schemas import AuditLogEntry
+from app.utils.config import settings
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+# MongoDB connection
+try:
+    mongo_client = MongoClient(settings.MONGODB_URI)
+    db = mongo_client.get_database()
+    analysis_collection = db['analysis_history']
+    logger.info("MongoDB connected for audit trail")
+except Exception as e:
+    logger.warning(f"MongoDB connection failed: {e}")
+    mongo_client = None
+    analysis_collection = None
 
 @router.get("/", response_model=List[AuditLogEntry])
 async def get_audit_trail(
@@ -24,29 +38,28 @@ async def get_audit_trail(
     try:
         logger.info(f"Fetching audit trail: limit={limit}, skip={skip}")
         
-        # TODO: Query MongoDB for audit logs
-        # For now, return mock data
+        # Query MongoDB for real analysis history
+        if analysis_collection is None:
+            logger.warning("MongoDB not available, returning empty audit trail")
+            return []
         
-        mock_entries = [
-            AuditLogEntry(
-                tx_hash="0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
-                risk_score=85,
-                is_malicious=True,
-                analyzed_at="2024-01-15T10:30:00Z",
-                blockchain_hash="0xabc123...",
-                ipfs_hash="QmTest123..."
-            ),
-            AuditLogEntry(
-                tx_hash="0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b",
-                risk_score=25,
-                is_malicious=False,
-                analyzed_at="2024-01-15T09:15:00Z",
-                blockchain_hash="0xdef456...",
-                ipfs_hash="QmTest456..."
+        # Fetch from MongoDB sorted by analyzed_at descending
+        cursor = analysis_collection.find().sort("analyzed_at", -1).skip(skip).limit(limit)
+        
+        entries = []
+        for doc in cursor:
+            entry = AuditLogEntry(
+                tx_hash=doc.get("tx_hash", ""),
+                risk_score=doc.get("risk_score", 0),
+                is_malicious=doc.get("is_malicious", False),
+                analyzed_at=doc.get("analyzed_at", datetime.now()).isoformat() if isinstance(doc.get("analyzed_at"), datetime) else str(doc.get("analyzed_at", "")),
+                blockchain_hash=doc.get("blockchain_hash", ""),
+                ipfs_hash=doc.get("ipfs_hash", "")
             )
-        ]
+            entries.append(entry)
         
-        return mock_entries[skip:skip+limit]
+        logger.info(f"Returning {len(entries)} audit entries")
+        return entries
         
     except Exception as e:
         logger.error(f"Audit trail error: {str(e)}")

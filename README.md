@@ -280,13 +280,13 @@ cp .env.example .env# train ML model# Install dependencies
 
 # Edit with: CONTRACT_ADDRESS, INFURA_URL, PINATA keys
 
-python train_model.pynpm install
+python train_all_models.pynpm install
 
 # Prepare ML model
 
 python data/generate_sample_data.py```
 
-python train_model.py
+python train_all_models.py
 
 ```# Copy environment file
 
@@ -492,63 +492,51 @@ pytest tests/
 
 
 
-##  ML Model Details```Create a Jupyter notebook or Python script with:
-
-
+## ML Model Details
 
 ### Features (9 total)
 
+| # | Feature | Description |
+|---|---|---|
+| 1 | `amount` | Average ETH value sent per transaction |
+| 2 | `gas_price` | Gas price in Gwei (activity-based estimate) |
+| 3 | `gas_used` | Gas consumed (estimated from account type) |
+| 4 | `gas_price_deviation` | Deviation from network median gas price |
+| 5 | `value` | Total ETH sent by account |
+| 6 | `sender_tx_count` | Total confirmed outgoing transactions |
+| 7 | `is_contract_creation` | 1 if account deployed contracts, else 0 |
+| 8 | `contract_age` | Days since contract deployment (0 for EOAs) |
+| 9 | `block_gas_used_ratio` | Block gas utilisation ratio (0–1) |
 
+> At inference time, `sender_tx_count`, `contract_age`, `block_gas_used_ratio`,
+> and `gas_price_deviation` are enriched with real values from the Etherscan API,
+> replacing the training-time estimates.
 
-1. **amount** - Transaction value in ETH## Configuration```python
+### Model Card
 
-2. **gas_price** - Gas price in Gwei
+| Property | Value |
+|---|---|
+| Algorithm | XGBoost (n\_estimators=300, max\_depth=6, learning\_rate=0.05) |
+| Training data | Kaggle Ethereum Fraud Detection Dataset (~9,800 accounts) |
+| Class imbalance | Handled via `scale_pos_weight` |
+| Test ROC-AUC | ~0.95 |
+| Test PR-AUC | reported per run (more informative for imbalanced data) |
+| Explainability | SHAP TreeExplainer (per-feature attribution) |
 
-3. **gas_used** - Gas consumedimport pandas as pd
-
-4. **num_transfers** - Number of token transfers
-
-5. **unique_addresses** - Unique address count### Backend (.env)import numpy as np
-
-6. **time_of_day** - Hour of transaction (0-23)
-
-7. **contract_interaction** - Boolean flag for contract callsfrom sklearn.model_selection import train_test_split
-
-8. **sender_tx_count** - Sender's transaction history
-
-9. **receiver_tx_count** - Receiver's transaction history```envfrom sklearn.preprocessing import StandardScaler
-
-
-
-### Performance Metrics# blockchain settingsfrom sklearn.metrics import classification_report, roc_auc_score
-
-
-
-- **Algorithm**: XGBoostINFURA_URL=https://polygon-mumbai.infura.io/v3/YOUR_KEYimport xgboost as xgb
-
-- **Training Samples**: 10,000
-
-- **Test Accuracy**: 100%PRIVATE_KEY=your_private_keyimport pickle
-
-- **Explainability**: SHAP values for feature importance
-
-CONTRACT_ADDRESS=deployed_address
+**Known limitations**
+- Training data is account-level; real fraud detection needs transaction-level data
+- Features at training time are Kaggle proxies; Etherscan enrichment improves inference
+- Model should be retrained on Etherscan-enriched transaction-level data when available
 
 ### Retraining the Model
 
-# Load data
-
 ```bash
-
-cd backend# IPFS storagedf = pd.read_csv('data/processed/features.csv')
-
-.\venv\Scripts\activate
-
-python train_model.pyPINATA_JWT=your_jwt_token
-
+cd backend
+python train_all_models.py
 ```
 
-# Prepare features
+This trains both `model.pkl` (analysis) and `prevention_model.pkl` (pre-tx check)
+from the same canonical feature mapping and saves them to `app/ml/`.
 
 ---
 
@@ -871,61 +859,34 @@ GET http://localhost:8000/api/verify/{tx_hash}4. Enter a transaction hash
 
 
 
-## ML Model Details## 📖 API Documentation
+## 📖 API Documentation
 
+Once the backend is running, visit:
+- **Interactive Docs**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
 
+### Main Endpoints
 
-### Features (9 total)Once the backend is running, visit:
-
-- **Interactive API Docs**: http://localhost:8000/docs
-
-1. amount - Transaction value in ETH- **ReDoc**: http://localhost:8000/redoc
-
-2. gas_price - Gas price in Gwei
-
-3. gas_used - Gas consumed### Main Endpoints
-
-4. num_transfers - Token transfer count
-
-5. unique_addresses - Unique address count#### Analyze Transaction
-
-6. time_of_day - Hour (0-23)```http
-
-7. contract_interaction - Boolean flagPOST /api/analyze
-
-8. sender_tx_count - Sender historyContent-Type: application/json
-
-9. receiver_tx_count - Receiver history
+#### Analyze Transaction
+```http
+POST /api/analyze
+Content-Type: application/json
 
 {
-
-### Performance  "tx_hash": "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
-
+  "tx_hash": "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
   "network": "ethereum"
-
-- Algorithm: XGBoost}
-
-- Training samples: 10,000```
-
-- Test accuracy: 100%
-
-- Explainability: SHAP values#### Verify Explanation
-
-```http
-
-### Retrain ModelGET /api/verify/{tx_hash}
-
+}
 ```
 
-```powershell
+#### Verify Explanation
+```http
+GET /api/verify/{tx_hash}
+```
 
-cd backend#### Get Audit Trail
-
-.\venv\Scripts\Activate.ps1```http
-
-python train_model.pyGET /api/audit?limit=10&skip=0
-
-``````
+#### Get Audit Trail
+```http
+GET /api/audit?limit=10&skip=0
+```
 
 
 

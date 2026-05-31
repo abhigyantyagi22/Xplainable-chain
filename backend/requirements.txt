@@ -1,27 +1,36 @@
+# Core API
 fastapi==0.110.0
 uvicorn[standard]==0.27.0
 python-dotenv==1.0.1
-web3==6.15.0
-pandas==1.5.3
-numpy==1.23.5
-scikit-learn==1.4.0
-xgboost==2.0.3
-shap==0.44.0
-requests==2.31.0
-pymongo==4.6.0
+python-multipart==0.0.6
 pydantic==2.6.0
 pydantic-settings==2.2.0
-python-multipart==0.0.6
+
+# HTTP
+requests==2.31.0
+httpx==0.27.0
+
+# Blockchain
+web3==6.15.0
 eth-account==0.11.0
 
-# Causal Inference Libraries (RESEARCH NOVELTY)
-dowhy==0.11.1
-causalnex==0.12.1
+# Cache / DB
+redis[hiredis]==5.0.4
+pymongo==4.6.0
+
+# Data / ML  (pandas 2.x required for Python 3.12+)
+pandas>=2.0,<3.0
+numpy>=1.26.0,<2.2.0
+scikit-learn==1.4.2
+xgboost==2.0.3
+shap==0.44.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Causal Inference (versions that support Python 3.12)
+dowhy>=0.12
 networkx==3.2.1
 scipy==1.12.0
 statsmodels==0.14.1
-
-# Novel Causal Discovery (FIXED VERSION CONFLICTS)
-pgmpy==0.1.19  # Probabilistic graphical models (compatible with causalnex <0.1.20)
-causal-learn==0.1.3.3  # PC algorithm, FCI, GES
-# econml==0.14.1  # Commented out - causes long build times, not critical for core features
+pgmpy>=0.1.25
+causal-learn>=0.1.3.8

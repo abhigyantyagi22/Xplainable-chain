@@ -15,8 +15,8 @@ env/
 start_backend.sh
 start_frontend.sh
 
-# API keys and configuration
-**/config.py
+# config.py is application code — never ignore it.
+# Only secret/key files are excluded below.
 frontend/config/wagmi.ts
 public/abi/contract-address.json
 

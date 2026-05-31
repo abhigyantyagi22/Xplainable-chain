@@ -8,6 +8,7 @@ services:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
+      - REDIS_URL=redis://redis:6379        # use Docker service name, not localhost
     env_file:
       - ./backend/.env
     volumes:
@@ -16,6 +17,7 @@ services:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     depends_on:
       - mongodb
+      - redis
     networks:
       - xaichain
 
@@ -52,8 +54,24 @@ services:
     networks:
       - xaichain
 
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save ""
+    volumes:
+      - redis_data:/data
+    networks:
+      - xaichain
+
 volumes:
   mongodb_data:
+  redis_data:
 
 networks:
   xaichain:

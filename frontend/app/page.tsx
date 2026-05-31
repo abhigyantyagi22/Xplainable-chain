@@ -88,7 +88,20 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-4 gap-8">
+        <Link href="/prevent" className="group">
+          <div className="bg-gradient-to-br from-green-600 to-blue-600 rounded-xl p-6 shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 border-2 border-green-400">
+            <div className="flex items-center justify-between mb-4">
+              <Shield className="w-12 h-12 text-white" />
+              <span className="px-3 py-1 bg-white text-green-700 text-xs font-bold rounded-full">NEW</span>
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Check Before Send</h3>
+            <p className="text-green-50 text-sm">Prevent fraud by checking BEFORE you sign</p>
+            <div className="mt-4 text-white text-xs font-semibold">
+              ✅ RECOMMENDED →
+            </div>
+          </div>
+        </Link>
         <FeatureCard
           icon={<Activity className="w-12 h-12 text-purple-400" />}
           title="Real-time Detection"

@@ -47,14 +47,22 @@ class AIDetector:
             with open(self.scaler_path, 'rb') as f:
                 self.scaler = pickle.load(f)
             
-            # Feature names MUST match those used in train_model.py
-            self.feature_names = [
-                'amount', 'gas_price', 'gas_used', 'num_transfers',
-                'unique_addresses', 'time_of_day', 'contract_interaction',
-                'sender_tx_count', 'receiver_tx_count'
-            ]
+            # Load feature names from training to ensure exact match
+            feature_names_path = Path(__file__).parent.parent / "ml" / "feature_names.pkl"
+            if os.path.exists(feature_names_path):
+                with open(feature_names_path, 'rb') as f:
+                    self.feature_names = pickle.load(f)
+                logger.info(f"Loaded {len(self.feature_names)} features from training: {self.feature_names}")
+            else:
+                # Fallback to Kaggle dataset features (9 features)
+                self.feature_names = [
+                    'amount', 'gas_price', 'gas_used', 'gas_price_deviation',
+                    'value', 'sender_tx_count', 'is_contract_creation',
+                    'contract_age', 'block_gas_used_ratio'
+                ]
+                logger.warning("Feature names file not found, using default Kaggle features")
             
-            logger.info(" AI model loaded successfully")
+            logger.info("AI model loaded successfully")
         except Exception as e:
             logger.error(f"Failed to load model: {e}")
             logger.warning("Using mock model for testing")
@@ -97,9 +105,9 @@ class AIDetector:
         self.model = MockModel()
         self.scaler = MockScaler()
         self.feature_names = [
-            'amount', 'gas_price', 'gas_used', 'num_transfers',
-            'unique_addresses', 'time_of_day', 'contract_interaction',
-            'sender_tx_count', 'receiver_tx_count'
+            'amount', 'gas_price', 'gas_used', 'gas_price_deviation',
+            'value', 'sender_tx_count', 'is_contract_creation',
+            'contract_age', 'block_gas_used_ratio'
         ]
     
     def predict(self, features: dict) -> dict:

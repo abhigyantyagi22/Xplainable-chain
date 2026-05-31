@@ -60,22 +60,22 @@ def fetch_training_data_from_mongodb(
             logger.warning("No documents found in MongoDB")
             return None
         
-        # Extract features into DataFrame
+        # Extract features and risk scores together, keeping them in sync
         features_list = []
+        risk_scores = []
         for doc in documents:
             features = doc.get('features', {})
             if features:
                 features_list.append(features)
-        
+                risk_scores.append(doc.get('risk_score', 0))
+
         if not features_list:
             logger.warning("No valid features found in documents")
             return None
-        
+
         df = pd.DataFrame(features_list)
-        
-        # Add outcome variable (malicious) based on risk_score
-        # Use risk_score from documents if available
-        risk_scores = [doc.get('risk_score', 0) for doc in documents]
+
+        # Add outcome variable — risk_scores is now guaranteed same length as df
         df['malicious'] = [1 if score > 70 else 0 for score in risk_scores]
         df['fraud_score'] = [score / 100.0 for score in risk_scores]
         

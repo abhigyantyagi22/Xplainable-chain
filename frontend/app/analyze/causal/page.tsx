@@ -2,54 +2,105 @@
 
 import { useState } from 'react';
 import CausalGraphViz from '@/components/CausalGraphViz';
+import { apiGet, apiPost } from '@/lib/api';
 
 export default function CausalAnalysisPage() {
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fetchingData, setFetchingData] = useState(false);
 
   const [formData, setFormData] = useState({
-    transaction_hash: '0x1234567890abcdef',
-    gas_price: '50',
-    value: '1.5',
-    gas_used: '21000',
-    sender_tx_count: '10',
-    contract_age: '365',
+    transaction_hash: '',  // Empty by default - user MUST enter valid tx hash
+    gas_price: '',
+    value: '',
+    gas_used: '',
+    sender_tx_count: '',
+    contract_age: '',
     is_contract_creation: 'false',
   });
 
+  const handleFetchBlockchainData = async () => {
+    if (!formData.transaction_hash || formData.transaction_hash.trim() === '') {
+      setError('Please enter a transaction hash first');
+      return;
+    }
+    
+    if (!formData.transaction_hash.match(/^0x[a-fA-F0-9]{64}$/)) {
+      setError('Invalid transaction hash format. Must be 66 characters starting with 0x');
+      return;
+    }
+
+    setFetchingData(true);
+    setError(null);
+
+    try {
+      // Fetch transaction data from blockchain via backend
+      const txData = await apiGet(`/api/blockchain/transaction/${formData.transaction_hash}`);
+      
+      // Auto-fill form fields with blockchain data
+      // API returns features in both root level and features object for compatibility
+      setFormData(prev => ({
+        ...prev,
+        gas_price: (txData.gas_price ?? txData.features?.gas_price)?.toString() || '',
+        value: (txData.value ?? txData.features?.value)?.toString() || '',
+        gas_used: (txData.gas_used ?? txData.features?.gas_used)?.toString() || '',
+        sender_tx_count: (txData.sender_tx_count ?? txData.features?.sender_tx_count)?.toString() || '',
+        contract_age: (txData.contract_age ?? txData.features?.contract_age)?.toString() || '',
+        is_contract_creation: (txData.is_contract_creation ?? txData.features?.is_contract_creation) ? 'true' : 'false',
+        // Also set the calculated fields
+        gas_price_deviation: (txData.gas_price_deviation ?? txData.features?.gas_price_deviation)?.toString() || '',
+        block_gas_used_ratio: (txData.block_gas_used_ratio ?? txData.features?.block_gas_used_ratio)?.toString() || '',
+        amount: (txData.amount ?? txData.features?.amount)?.toString() || '',
+      }));
+
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch transaction data');
+    } finally {
+      setFetchingData(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate transaction hash before submitting
+    if (!formData.transaction_hash || formData.transaction_hash.trim() === '') {
+      setError('Please enter a valid transaction hash');
+      return;
+    }
+    
+    if (!formData.transaction_hash.match(/^0x[a-fA-F0-9]{64}$/)) {
+      setError('Invalid transaction hash format. Must be 66 characters starting with 0x');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
 
     try {
-      const features = {
-        gas_price: parseFloat(formData.gas_price),
-        value: parseFloat(formData.value),
-        gas_used: parseFloat(formData.gas_used),
-        sender_tx_count: parseFloat(formData.sender_tx_count),
-        contract_age: parseFloat(formData.contract_age),
-        is_contract_creation: formData.is_contract_creation === 'true' ? 1 : 0,
+      // Only include features if user has entered values
+      const features: any = {};
+      
+      if (formData.gas_price) features.gas_price = parseFloat(formData.gas_price);
+      if (formData.value) features.value = parseFloat(formData.value);
+      if (formData.gas_used) features.gas_used = parseFloat(formData.gas_used);
+      if (formData.sender_tx_count) features.sender_tx_count = parseFloat(formData.sender_tx_count);
+      if (formData.contract_age) features.contract_age = parseFloat(formData.contract_age);
+      if (formData.is_contract_creation) features.is_contract_creation = formData.is_contract_creation === 'true' ? 1 : 0;
+
+      const requestBody: any = {
+        transaction_hash: formData.transaction_hash,
+        treatment_features: ['gas_price', 'value', 'sender_tx_count'],
       };
-
-      const response = await fetch('http://localhost:8000/api/analyze/causal/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          transaction_hash: formData.transaction_hash,
-          features,
-          treatment_features: ['gas_price', 'value', 'sender_tx_count'],
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to perform causal analysis');
+      
+      // Only send features if user provided any overrides
+      if (Object.keys(features).length > 0) {
+        requestBody.features = features;
       }
 
-      const data = await response.json();
+      const data = await apiPost('/api/analyze/causal/', requestBody);
       setAnalysisResult(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -61,6 +112,24 @@ export default function CausalAnalysisPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-8">
       <div className="max-w-7xl mx-auto">
+        {/* Back Navigation */}
+        <div className="mb-6">
+          <a 
+            href="/" 
+            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors font-medium group"
+          >
+            <svg 
+              className="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Home
+          </a>
+        </div>
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
@@ -90,18 +159,42 @@ export default function CausalAnalysisPage() {
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Run Causal Analysis</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
+            <div className="grid grid-cols-1 gap-4 mb-4">
+              <div className="col-span-full">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Transaction Hash
+                  Transaction Hash <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={formData.transaction_hash}
-                  onChange={(e) => setFormData({ ...formData, transaction_hash: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={formData.transaction_hash}
+                    onChange={(e) => setFormData({ ...formData, transaction_hash: e.target.value })}
+                    placeholder="0x... (66 characters starting with 0x)"
+                    required
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-2 focus:ring-purple-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleFetchBlockchainData}
+                    disabled={fetchingData || !formData.transaction_hash}
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium whitespace-nowrap"
+                  >
+                    {fetchingData ? 'Fetching...' : '🔍 Fetch Data'}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Enter a transaction hash, then click "Fetch Data" to auto-fill the fields below with blockchain data.
+                </p>
               </div>
+            </div>
+            
+            {/* Optional Manual Features */}
+            <div className="bg-blue-50 p-4 rounded-md mb-4">
+              <h3 className="text-sm font-semibold text-blue-900 mb-2">Transaction Features</h3>
+              <p className="text-xs text-blue-700 mb-3">
+                These fields are auto-filled from blockchain. You can manually override them to test hypothetical scenarios.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Gas Price (Gwei)
@@ -160,6 +253,8 @@ export default function CausalAnalysisPage() {
                 />
               </div>
             </div>
+            </div>
+            
             <button
               type="submit"
               disabled={loading}

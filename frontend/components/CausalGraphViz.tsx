@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
+import { apiGet } from '@/lib/api';
 import {
   ReactFlow,
   Controls,
@@ -21,7 +22,10 @@ interface CausalNode {
 interface CausalEdge {
   source: string;
   target: string;
-  mechanism: string;
+  weight: number;
+  type: string;
+  strength: string;
+  label: string;
 }
 
 interface CausalGraphData {
@@ -51,11 +55,7 @@ export default function CausalGraphViz() {
 
   const fetchCausalGraph = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/analyze/causal/graph');
-      if (!response.ok) {
-        throw new Error('Failed to fetch causal graph');
-      }
-      const data: CausalGraphData = await response.json();
+      const data = await apiGet<CausalGraphData>('/api/causal/graph');
       setGraphData(data);
       layoutGraph(data);
       setLoading(false);
@@ -132,17 +132,20 @@ export default function CausalGraphViz() {
       id: `edge-${index}`,
       source: edge.source,
       target: edge.target,
-      label: edge.mechanism,
+      label: `${edge.label} (${edge.strength})`,
       type: 'smoothstep',
-      animated: true,
+      animated: edge.strength === 'strong',
       markerEnd: {
         type: MarkerType.ArrowClosed,
         width: 20,
         height: 20,
       },
-      style: { stroke: '#64748b', strokeWidth: 2 },
-      labelStyle: { fontSize: 10, fill: '#64748b' },
-      labelBgStyle: { fill: '#ffffff', fillOpacity: 0.8 },
+      style: { 
+        stroke: edge.strength === 'strong' ? '#2563eb' : edge.strength === 'moderate' ? '#64748b' : '#cbd5e1',
+        strokeWidth: edge.strength === 'strong' ? 3 : edge.strength === 'moderate' ? 2 : 1,
+      },
+      labelStyle: { fontSize: 10, fill: '#64748b', fontWeight: edge.strength === 'strong' ? 'bold' : 'normal' },
+      labelBgStyle: { fill: '#ffffff', fillOpacity: 0.9 },
     }));
 
     setNodes(flowNodes);
@@ -178,7 +181,7 @@ export default function CausalGraphViz() {
   }
 
   return (
-    <div className="w-full h-[600px] bg-gray-50 rounded-lg border border-gray-200">
+    <div className="w-full h-[600px] bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
       <div className="p-4 bg-white border-b border-gray-200">
         <h2 className="text-xl font-bold text-gray-900">Causal Graph Structure</h2>
         <p className="text-sm text-gray-600 mt-1">
@@ -203,15 +206,19 @@ export default function CausalGraphViz() {
           </div>
         </div>
       </div>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        fitView
-        attributionPosition="bottom-left"
-      >
-        <Controls />
-        <Background />
-      </ReactFlow>
+      <div className="h-[calc(100%-140px)] relative">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          fitView
+          attributionPosition="bottom-left"
+          style={{ position: 'absolute', inset: 0 }}
+          proOptions={{ hideAttribution: true }}
+        >
+          <Controls />
+          <Background />
+        </ReactFlow>
+      </div>
     </div>
   );
 }
