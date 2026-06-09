@@ -76,11 +76,7 @@ app = FastAPI(
 # CORS — keep before rate limiting so pre-flight OPTIONS requests are handled first
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "https://xai-chain.vercel.app",
-    ],
+    allow_origins=[o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: xai-chain-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: MASTER_API_KEY
+        sync: false
+      - key: ENABLE_AUTH
+        value: true
+      - key: CORS_ORIGINS
+        sync: false
+      - key: INFURA_API_KEY
+        sync: false
+      - key: INFURA_URL
+        sync: false
+      - key: PRIVATE_KEY
+        sync: false
+      - key: CONTRACT_ADDRESS
+        sync: false
+      - key: PINATA_API_KEY
+        sync: false
+      - key: PINATA_API_SECRET
+        sync: false
+      - key: PINATA_JWT
+        sync: false
+      - key: ETHERSCAN_API_KEY
+        sync: false
+      - key: POLYGONSCAN_API_KEY
+        sync: false
+      - key: PYTHONUNBUFFERED
+        value: "1"

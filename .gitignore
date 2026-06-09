@@ -24,7 +24,6 @@ public/abi/contract-address.json
 frontend/.next/
 frontend/out/
 frontend/build/
-backend/app/ml/*.pkl
 dist/
 build/
 
@@ -53,6 +52,9 @@ data/processed/*.csv
 *.pkl
 *.h5
 *.joblib
+
+# Keep trained model files (small, needed for Render deployment)
+!backend/app/ml/*.pkl
 
 # Testing
 .coverage

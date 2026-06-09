@@ -1,22 +1,42 @@
-# Node.js
-FROM node:20-alpine
-
+# ── Stage 1: Install dependencies ─────────────────────────────────────────────
+FROM node:20-alpine AS deps
 WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install system build deps required for some native npm modules
-# Provide python and build tools for node-gyp to work in Alpine
 RUN apk add --no-cache python3 make g++ build-base \
-	&& ln -sf /usr/bin/python3 /usr/bin/python \
-	&& npm install
+    && ln -sf /usr/bin/python3 /usr/bin/python
+COPY package*.json ./
+RUN npm ci
 
-# Copy application
+# ── Stage 2: Build ────────────────────────────────────────────────────────────
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN npm run build
 
-# Expose port
+# ── Stage 3: Production runner (standalone) ───────────────────────────────────
+FROM node:20-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN addgroup --system --gid 1001 nodejs \
+    && adduser --system --uid 1001 nextjs
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+USER nextjs
 EXPOSE 3000
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+CMD ["node", "server.js"]
 
-# Run application
+# ── Stage 4: Development ──────────────────────────────────────────────────────
+FROM node:20-alpine AS dev
+WORKDIR /app
+RUN apk add --no-cache python3 make g++ build-base \
+    && ln -sf /usr/bin/python3 /usr/bin/python
+COPY package*.json ./
+RUN npm install
+COPY . .
+EXPOSE 3000
 CMD ["npm", "run", "dev"]

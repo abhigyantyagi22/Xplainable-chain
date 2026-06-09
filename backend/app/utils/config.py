@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     # Minimum risk_score to trigger IPFS + blockchain storage (Phase 3 — Step 7)
     STORAGE_RISK_THRESHOLD: int = int(os.getenv("STORAGE_RISK_THRESHOLD", "70"))
 
+    # CORS
+    CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001")
+
     # Secrets Manager (optional — if set, secrets are loaded from AWS SM)
     AWS_SECRET_NAME: str = os.getenv("AWS_SECRET_NAME", "")
     AWS_REGION: str = os.getenv("AWS_REGION", "us-east-1")

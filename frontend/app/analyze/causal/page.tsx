@@ -36,7 +36,7 @@ export default function CausalAnalysisPage() {
 
     try {
       // Fetch transaction data from blockchain via backend
-      const txData = await apiGet(`/api/blockchain/transaction/${formData.transaction_hash}`);
+      const txData = await apiGet<any>(`/api/blockchain/transaction/${formData.transaction_hash}`);
       
       // Auto-fill form fields with blockchain data
       // API returns features in both root level and features object for compatibility
