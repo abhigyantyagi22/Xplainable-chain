@@ -5,7 +5,7 @@ import { Providers } from './providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'XAI-Chain - Explainable AI for Blockchain Security',
+  title: 'Block Sight - Explainable AI for Blockchain Security',
   description: 'Detect malicious transactions with AI and verify explanations on-chain',
 };
 

@@ -5,6 +5,7 @@ import { useAccount } from 'wagmi';
 import Link from 'next/link';
 import { Shield, Activity, FileSearch, TrendingUp, Github } from 'lucide-react';
 import { ReactNode } from 'react';
+import BlockSightLogo from '@/components/BlockSightLogo';
 
 export default function Home() {
   const { isConnected } = useAccount();
@@ -14,8 +15,8 @@ export default function Home() {
       {/* Header */}
       <header className="container mx-auto px-4 py-6 flex justify-between items-center">
         <div className="flex items-center space-x-2">
-          <Shield className="w-8 h-8 text-purple-400" />
-          <h1 className="text-2xl font-bold text-white">XAI-Chain</h1>
+          <BlockSightLogo className="w-8 h-8 text-purple-400" />
+          <h1 className="text-2xl font-bold text-white">Block Sight</h1>
         </div>
         <div className="flex items-center space-x-4">
           <Link
@@ -66,16 +67,38 @@ export default function Home() {
 
       {/* Features */}
       <section className="container mx-auto px-4 py-20">
+        {/* Check Before Send — primary highlight */}
+        <Link href="/prevent" className="group block mb-8">
+          <div className="bg-gradient-to-r from-green-600 to-emerald-500 rounded-2xl p-8 shadow-2xl transition-all transform hover:scale-[1.02] border-2 border-green-400">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-3">
+                  <Shield className="w-10 h-10 text-white" />
+                  <span className="px-3 py-1 bg-white text-green-700 text-xs font-bold rounded-full">NEW</span>
+                  <span className="px-3 py-1 bg-white/20 text-white text-xs font-semibold rounded-full">✅ RECOMMENDED</span>
+                </div>
+                <h3 className="text-3xl font-bold text-white mb-3">Check Before Send</h3>
+                <p className="text-green-50 text-lg max-w-2xl">
+                  Prevent fraud before it happens. Scan any transaction and get an instant risk
+                  assessment with a full explanation — all before you sign and send.
+                </p>
+              </div>
+              <div className="shrink-0">
+                <span className="inline-block px-8 py-3 bg-white text-green-700 font-bold rounded-lg group-hover:bg-green-50 transition-all">
+                  Check a Transaction →
+                </span>
+              </div>
+            </div>
+          </div>
+        </Link>
+
         {/* Causal XAI Highlight */}
         <div className="mb-12 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-8 shadow-2xl">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <div className="inline-block px-3 py-1 bg-white/20 rounded-full text-white text-sm font-semibold mb-3">
-                🔬 RESEARCH FEATURE
-              </div>
               <h3 className="text-3xl font-bold text-white mb-3">Causal Explainable AI</h3>
               <p className="text-purple-100 text-lg mb-4">
-                First-ever causal inference for blockchain fraud detection. Go beyond correlation 
+                First-ever causal inference for blockchain fraud detection. Go beyond correlation
                 to identify true cause-and-effect relationships. Detect spurious correlations and confounders.
               </p>
               <Link
@@ -88,20 +111,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-4 gap-8">
-        <Link href="/prevent" className="group">
-          <div className="bg-gradient-to-br from-green-600 to-blue-600 rounded-xl p-6 shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 border-2 border-green-400">
-            <div className="flex items-center justify-between mb-4">
-              <Shield className="w-12 h-12 text-white" />
-              <span className="px-3 py-1 bg-white text-green-700 text-xs font-bold rounded-full">NEW</span>
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2">Check Before Send</h3>
-            <p className="text-green-50 text-sm">Prevent fraud by checking BEFORE you sign</p>
-            <div className="mt-4 text-white text-xs font-semibold">
-              ✅ RECOMMENDED →
-            </div>
-          </div>
-        </Link>
+        <div className="grid md:grid-cols-3 gap-8">
         <FeatureCard
           icon={<Activity className="w-12 h-12 text-purple-400" />}
           title="Real-time Detection"
@@ -134,7 +144,7 @@ export default function Home() {
       <footer className="container mx-auto px-4 py-8 border-t border-gray-800">
         <div className="flex justify-between items-center">
           <p className="text-gray-400 text-sm">
-            © 2025 XAI-Chain. Built with Next.js, FastAPI, and Web3.
+            © 2025 Block Sight. Built with Next.js, FastAPI, and Web3.
           </p>
           <a
             href="https://github.com/yourusername/xai-chain"
