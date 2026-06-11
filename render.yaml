@@ -6,6 +6,7 @@ services:
     dockerContext: ./backend
     plan: starter
     healthCheckPath: /health
+    port: 8000
     envVars:
       - key: MONGODB_URI
         sync: false
