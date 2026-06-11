@@ -1,162 +1,139 @@
 'use client';
 
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useAccount } from 'wagmi';
 import Link from 'next/link';
-import { Shield, Activity, FileSearch, TrendingUp, Github } from 'lucide-react';
+import {
+  Activity,
+  FileSearch,
+  TrendingUp,
+  ArrowRight,
+  GitBranch,
+  ShieldCheck,
+} from 'lucide-react';
 import { ReactNode } from 'react';
-import BlockSightLogo from '@/components/BlockSightLogo';
 
 export default function Home() {
-  const { isConnected } = useAccount();
-
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Header */}
-      <header className="container mx-auto px-4 py-6 flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          <BlockSightLogo className="w-8 h-8 text-purple-400" />
-          <h1 className="text-2xl font-bold text-white">Block Sight</h1>
-        </div>
-        <div className="flex items-center space-x-4">
-          <Link
-            href="/dashboard"
-            className="text-gray-300 hover:text-white transition"
-          >
-            Dashboard
-          </Link>
-          <ConnectButton />
-        </div>
-      </header>
-
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 text-center">
-        <h2 className="text-5xl md:text-6xl font-bold text-white mb-6">
-          Explainable AI for
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
-            {' '}Blockchain Security
+    <div>
+      {/* Hero */}
+      <section className="mx-auto max-w-6xl px-4 pb-20 pt-16 sm:px-6 sm:pt-24">
+        <div className="mx-auto max-w-3xl text-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            Live on Polygon Amoy
           </span>
-        </h2>
-        <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-          Detect malicious transactions with AI. Understand every decision with SHAP explanations.
-          Verify everything on-chain.
-        </p>
-        
-        <div className="flex justify-center space-x-4">
-          <Link
-            href="/analyze"
-            className="px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition transform hover:scale-105"
-          >
-            Analyze Transaction
-          </Link>
-          <Link
-            href="/dashboard"
-            className="px-8 py-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition transform hover:scale-105"
-          >
-            View Dashboard
-          </Link>
-        </div>
-
-        {isConnected && (
-          <div className="mt-6 inline-flex items-center px-4 py-2 bg-green-900/50 border border-green-500 rounded-lg">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-2" />
-            <span className="text-green-300 text-sm">Wallet Connected</span>
+          <h1 className="mt-6 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl md:text-6xl">
+            Explainable AI for
+            <span className="text-indigo-600"> blockchain security</span>
+          </h1>
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-slate-600">
+            Detect malicious transactions with machine learning, understand every
+            decision through SHAP and causal analysis, and verify the results on-chain.
+          </p>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              href="/prevent"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 sm:w-auto"
+            >
+              Check a transaction
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/dashboard"
+              className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 sm:w-auto"
+            >
+              View dashboard
+            </Link>
           </div>
-        )}
+        </div>
       </section>
 
-      {/* Features */}
-      <section className="container mx-auto px-4 py-20">
-        {/* Check Before Send — primary highlight */}
-        <Link href="/prevent" className="group block mb-8">
-          <div className="bg-gradient-to-r from-green-600 to-emerald-500 rounded-2xl p-8 shadow-2xl transition-all transform hover:scale-[1.02] border-2 border-green-400">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-3">
-                  <Shield className="w-10 h-10 text-white" />
-                  <span className="px-3 py-1 bg-white text-green-700 text-xs font-bold rounded-full">NEW</span>
-                  <span className="px-3 py-1 bg-white/20 text-white text-xs font-semibold rounded-full">✅ RECOMMENDED</span>
+      {/* Primary highlight: Check Before Send */}
+      <section className="mx-auto max-w-6xl px-4 sm:px-6">
+        <Link href="/prevent" className="group block">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+            <div className="flex flex-col gap-6 p-8 md:flex-row md:items-center md:justify-between md:p-10">
+              <div className="max-w-2xl">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                    <ShieldCheck className="h-5 w-5" />
+                  </span>
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                    Recommended
+                  </span>
                 </div>
-                <h3 className="text-3xl font-bold text-white mb-3">Check Before Send</h3>
-                <p className="text-green-50 text-lg max-w-2xl">
+                <h2 className="mt-4 text-2xl font-bold text-slate-900">Check Before Send</h2>
+                <p className="mt-2 text-slate-600">
                   Prevent fraud before it happens. Scan any transaction and get an instant risk
                   assessment with a full explanation — all before you sign and send.
                 </p>
               </div>
-              <div className="shrink-0">
-                <span className="inline-block px-8 py-3 bg-white text-green-700 font-bold rounded-lg group-hover:bg-green-50 transition-all">
-                  Check a Transaction →
-                </span>
-              </div>
+              <span className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition-colors group-hover:bg-slate-800">
+                Check a transaction
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </span>
             </div>
           </div>
         </Link>
+      </section>
 
-        {/* Causal XAI Highlight */}
-        <div className="mb-12 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-8 shadow-2xl">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <h3 className="text-3xl font-bold text-white mb-3">Causal Explainable AI</h3>
-              <p className="text-purple-100 text-lg mb-4">
-                First-ever causal inference for blockchain fraud detection. Go beyond correlation
-                to identify true cause-and-effect relationships. Detect spurious correlations and confounders.
+      {/* Causal AI highlight */}
+      <section className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
+        <div className="overflow-hidden rounded-2xl bg-slate-900 shadow-sm">
+          <div className="flex flex-col gap-6 p-8 md:flex-row md:items-center md:justify-between md:p-10">
+            <div className="max-w-2xl">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 text-indigo-300">
+                <GitBranch className="h-5 w-5" />
+              </span>
+              <h2 className="mt-4 text-2xl font-bold text-white">Causal Explainable AI</h2>
+              <p className="mt-2 text-slate-300">
+                Go beyond correlation. Identify true cause-and-effect relationships in fraud
+                detection, and reveal the spurious correlations that confounders create.
               </p>
-              <Link
-                href="/analyze/causal"
-                className="inline-block px-8 py-3 bg-white text-purple-600 font-bold rounded-lg hover:bg-purple-50 transition-all transform hover:scale-105"
-              >
-                Explore Causal XAI →
-              </Link>
             </div>
+            <Link
+              href="/analyze/causal"
+              className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-100"
+            >
+              Explore Causal AI
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
+      </section>
 
-        <div className="grid md:grid-cols-3 gap-8">
-        <FeatureCard
-          icon={<Activity className="w-12 h-12 text-purple-400" />}
-          title="Real-time Detection"
-          description="AI-powered anomaly detection analyzes transactions in seconds"
-        />
-        <FeatureCard
-          icon={<FileSearch className="w-12 h-12 text-pink-400" />}
-          title="Explainable AI"
-          description="SHAP values show exactly why each transaction was flagged"
-        />
-        <FeatureCard
-          icon={<TrendingUp className="w-12 h-12 text-blue-400" />}
-          title="On-Chain Verification"
-          description="Explanations stored immutably on Polygon for transparency"
-        />
+      {/* Feature grid */}
+      <section className="mx-auto max-w-6xl px-4 pt-16 sm:px-6">
+        <div className="grid gap-6 md:grid-cols-3">
+          <FeatureCard
+            icon={<Activity className="h-5 w-5" />}
+            title="Real-time detection"
+            description="AI-powered anomaly detection analyzes transactions in seconds."
+          />
+          <FeatureCard
+            icon={<FileSearch className="h-5 w-5" />}
+            title="Explainable AI"
+            description="SHAP values show exactly why each transaction was flagged."
+          />
+          <FeatureCard
+            icon={<TrendingUp className="h-5 w-5" />}
+            title="On-chain verification"
+            description="Explanations stored immutably on Polygon for transparency."
+          />
         </div>
       </section>
 
       {/* Stats */}
-      <section className="container mx-auto px-4 py-20">
-        <div className="bg-gray-800/50 backdrop-blur-lg rounded-2xl p-8 grid md:grid-cols-4 gap-8 text-center">
-          <StatCard label="Detection Accuracy" value="94%" />
-          <StatCard label="Avg Analysis Time" value="8s" />
-          <StatCard label="Transactions Analyzed" value="1,247" />
-          <StatCard label="Gas Cost per Entry" value="0.001 MATIC" />
+      <section className="mx-auto max-w-6xl px-4 pt-16 sm:px-6">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+          <div className="grid grid-cols-2 gap-8 text-center md:grid-cols-4">
+            <StatCard label="Detection accuracy" value="94%" />
+            <StatCard label="Avg analysis time" value="8s" />
+            <StatCard label="Transactions analyzed" value="1,247" />
+            <StatCard label="Gas cost per entry" value="0.001 MATIC" />
+          </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="container mx-auto px-4 py-8 border-t border-gray-800">
-        <div className="flex justify-between items-center">
-          <p className="text-gray-400 text-sm">
-            © 2025 Block Sight. Built with Next.js, FastAPI, and Web3.
-          </p>
-          <a
-            href="https://github.com/yourusername/xai-chain"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-400 hover:text-white transition"
-          >
-            <Github className="w-6 h-6" />
-          </a>
-        </div>
-      </footer>
-    </main>
+    </div>
   );
 }
 
@@ -168,10 +145,12 @@ interface FeatureCardProps {
 
 function FeatureCard({ icon, title, description }: FeatureCardProps) {
   return (
-    <div className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-6 hover:bg-gray-800/70 transition transform hover:scale-105">
-      <div className="mb-4">{icon}</div>
-      <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
-      <p className="text-gray-400">{description}</p>
+    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+      <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+        {icon}
+      </span>
+      <h3 className="mt-4 text-base font-semibold text-slate-900">{title}</h3>
+      <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{description}</p>
     </div>
   );
 }
@@ -184,8 +163,8 @@ interface StatCardProps {
 function StatCard({ label, value }: StatCardProps) {
   return (
     <div>
-      <div className="text-4xl font-bold text-purple-400 mb-2">{value}</div>
-      <div className="text-gray-400">{label}</div>
+      <div className="text-3xl font-bold text-slate-900">{value}</div>
+      <div className="mt-1 text-sm text-slate-500">{label}</div>
     </div>
   );
 }

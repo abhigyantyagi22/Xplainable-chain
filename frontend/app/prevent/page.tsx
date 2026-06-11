@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { AlertTriangle, CheckCircle, Info, TrendingDown } from 'lucide-react'
+import { AlertTriangle, CheckCircle, Info, TrendingDown, ShieldCheck } from 'lucide-react'
 import { apiPost } from '@/lib/api'
 
 interface CausalFactor {
@@ -29,11 +29,21 @@ interface PreCheckResult {
   note: string
 }
 
+const FEATURE_NOTES: { name: string; note: string }[] = [
+  { name: 'amount', note: 'Transaction amount in ETH (what you entered).' },
+  { name: 'value', note: 'Transaction value — same as amount for simple transfers.' },
+  { name: 'gas_price', note: 'Gas price in Gwei (entered or network average).' },
+  { name: 'gas_used', note: 'Estimated: 21000 for a simple transfer, ~100000 for contracts.' },
+  { name: 'gas_price_deviation', note: 'Calculated: how much gas price differs from the network average.' },
+  { name: 'sender_tx_count', note: 'Fetched: your account’s transaction history (if address provided).' },
+  { name: 'contract_age', note: 'Estimated: age of the recipient contract (0 for regular wallets).' },
+  { name: 'is_contract_creation', note: 'Detected: whether creating a new contract (1) or not (0).' },
+]
+
 export default function PreventPage() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<PreCheckResult | null>(null)
-  
-  // Form state
+
   const [toAddress, setToAddress] = useState('')
   const [amount, setAmount] = useState('')
   const [gasPrice, setGasPrice] = useState('')
@@ -44,10 +54,8 @@ export default function PreventPage() {
       alert('Please enter recipient address')
       return
     }
-
     setLoading(true)
     setResult(null)
-
     try {
       const data = await apiPost<PreCheckResult>('/api/check-before-send', {
         to_address: toAddress,
@@ -64,221 +72,113 @@ export default function PreventPage() {
     }
   }
 
-  const getRiskColor = (risk: number) => {
-    if (risk > 70) return 'text-red-600 bg-red-50 border-red-200'
-    if (risk > 40) return 'text-yellow-600 bg-yellow-50 border-yellow-200'
-    return 'text-green-600 bg-green-50 border-green-200'
-  }
+  const riskTone = (risk: number) =>
+    risk > 70
+      ? 'border-red-200 bg-red-50 text-red-700'
+      : risk > 40
+      ? 'border-amber-200 bg-amber-50 text-amber-700'
+      : 'border-emerald-200 bg-emerald-50 text-emerald-700'
 
-  const getRiskIcon = (risk: number) => {
-    if (risk > 70) return <AlertTriangle className="w-8 h-8 text-red-600" />
-    if (risk > 40) return <Info className="w-8 h-8 text-yellow-600" />
-    return <CheckCircle className="w-8 h-8 text-green-600" />
-  }
+  const riskIcon = (risk: number) =>
+    risk > 70 ? <AlertTriangle className="h-8 w-8 text-red-500" />
+    : risk > 40 ? <Info className="h-8 w-8 text-amber-500" />
+    : <CheckCircle className="h-8 w-8 text-emerald-500" />
+
+  const inputClass =
+    'w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500'
 
   return (
-    <div className="container mx-auto p-8 max-w-6xl">
-      {/* Back Navigation */}
-      <div className="mb-6">
-        <a 
-          href="/" 
-          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors font-medium group"
-        >
-          <svg 
-            className="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Back to Home
-        </a>
-      </div>
-
+    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
+      {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2 flex items-center gap-2">
-          <CheckCircle className="w-10 h-10 text-blue-600" />
-          Check Before You Send
-        </h1>
-        <p className="text-gray-600 text-lg">
-          ✅ Analyze transactions BEFORE signing to prevent fraud
-        </p>
-        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-800">
-            <strong>New Prevention Feature:</strong> Enter your transaction details below to check 
-            for fraud risk BEFORE you sign in MetaMask. You can adjust parameters based on recommendations 
-            and re-check until the risk is acceptable.
-          </p>
+        <div className="flex items-center gap-3">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+            <ShieldCheck className="h-6 w-6" />
+          </span>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Check Before You Send</h1>
+            <p className="text-slate-600">Analyze a transaction before signing to prevent fraud.</p>
+          </div>
+        </div>
+        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600 shadow-sm">
+          Enter your transaction details to check the fraud risk <strong className="text-slate-900">before</strong> you
+          sign in MetaMask. Adjust parameters based on the recommendations and re-check until the risk is acceptable.
         </div>
       </div>
 
-      {/* Input Form */}
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-        <h2 className="text-2xl font-semibold mb-6">Transaction Details</h2>
-        
-        <div className="space-y-4">
+      {/* Form */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <h2 className="text-lg font-semibold text-slate-900">Transaction details</h2>
+        <div className="mt-5 space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Recipient Address *
-            </label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Recipient address *</label>
             <input
               type="text"
               value={toAddress}
               onChange={(e) => setToAddress(e.target.value)}
               placeholder="0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`${inputClass} font-mono text-sm`}
             />
-            <p className="text-xs text-gray-500 mt-1">
-              The address you want to send funds to
-            </p>
+            <p className="mt-1 text-xs text-slate-500">The address you want to send funds to.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Amount (ETH)
-              </label>
-              <input
-                type="number"
-                step="0.001"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.5"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Amount (ETH)</label>
+              <input type="number" step="0.001" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.5" className={inputClass} />
             </div>
-
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Gas Price (Gwei) - Optional
-              </label>
-              <input
-                type="number"
-                value={gasPrice}
-                onChange={(e) => setGasPrice(e.target.value)}
-                placeholder="50"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Leave empty to use network average
-              </p>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Gas price (Gwei) — optional</label>
+              <input type="number" value={gasPrice} onChange={(e) => setGasPrice(e.target.value)} placeholder="50" className={inputClass} />
+              <p className="mt-1 text-xs text-slate-500">Leave empty to use the network average.</p>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Your Address (From) - Optional
-            </label>
-            <input
-              type="text"
-              value={fromAddress}
-              onChange={(e) => setFromAddress(e.target.value)}
-              placeholder="0x..."
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              For better accuracy (includes your account history)
-            </p>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Your address (from) — optional</label>
+            <input type="text" value={fromAddress} onChange={(e) => setFromAddress(e.target.value)} placeholder="0x…" className={`${inputClass} font-mono text-sm`} />
+            <p className="mt-1 text-xs text-slate-500">Improves accuracy by including your account history.</p>
           </div>
 
           <button
             onClick={checkBeforeSend}
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            className="w-full rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
           >
-            {loading ? 'Analyzing...' : '🔍 Check Safety Before Sending'}
+            {loading ? 'Analyzing…' : 'Check safety before sending'}
           </button>
         </div>
       </div>
 
       {/* Results */}
       {result && (
-        <div className="space-y-6">
-          {/* Risk Score */}
-          <div className={`p-6 border-2 rounded-lg ${getRiskColor(result.risk_score)}`}>
-            <div className="flex items-center gap-4 mb-4">
-              {getRiskIcon(result.risk_score)}
+        <div className="mt-6 space-y-6">
+          {/* Risk score */}
+          <div className={`rounded-2xl border p-6 ${riskTone(result.risk_score)}`}>
+            <div className="flex items-center gap-4">
+              {riskIcon(result.risk_score)}
               <div>
-                <h3 className="text-3xl font-bold">{result.risk_score}% Risk</h3>
-                <p className="font-semibold text-lg">{result.action}</p>
+                <h3 className="text-3xl font-bold text-slate-900">{result.risk_score}% risk</h3>
+                <p className="text-lg font-semibold">{result.action}</p>
               </div>
             </div>
-            <p className="text-sm opacity-80">{result.note}</p>
+            <p className="mt-3 text-sm text-slate-600">{result.note}</p>
           </div>
 
-          {/* Feature Explanation */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg shadow-lg p-6 border-2 border-blue-200">
-            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              ℹ️ Understanding the Analysis Features
-            </h3>
-            <div className="grid md:grid-cols-2 gap-4 text-sm">
-              <div className="space-y-2">
-                <div className="p-3 bg-white rounded-lg border border-blue-100">
-                  <span className="font-semibold text-blue-800">amount</span>
-                  <p className="text-gray-600 mt-1">Transaction amount in ETH (what you entered)</p>
-                </div>
-                <div className="p-3 bg-white rounded-lg border border-blue-100">
-                  <span className="font-semibold text-blue-800">value</span>
-                  <p className="text-gray-600 mt-1">Transaction value - same as amount for simple transfers</p>
-                </div>
-                <div className="p-3 bg-white rounded-lg border border-blue-100">
-                  <span className="font-semibold text-blue-800">gas_price</span>
-                  <p className="text-gray-600 mt-1">Gas price in Gwei (entered or network average)</p>
-                </div>
-                <div className="p-3 bg-white rounded-lg border border-blue-100">
-                  <span className="font-semibold text-blue-800">gas_used</span>
-                  <p className="text-gray-600 mt-1">⚙️ ESTIMATED: 21000 for simple transfer, 100000 for contracts</p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="p-3 bg-white rounded-lg border border-blue-100">
-                  <span className="font-semibold text-blue-800">gas_price_deviation</span>
-                  <p className="text-gray-600 mt-1">⚙️ CALCULATED: How much gas price differs from network average</p>
-                </div>
-                <div className="p-3 bg-white rounded-lg border border-blue-100">
-                  <span className="font-semibold text-blue-800">sender_tx_count</span>
-                  <p className="text-gray-600 mt-1">⚙️ FETCHED: Your account's transaction history (if address provided)</p>
-                </div>
-                <div className="p-3 bg-white rounded-lg border border-blue-100">
-                  <span className="font-semibold text-blue-800">contract_age</span>
-                  <p className="text-gray-600 mt-1">⚙️ ESTIMATED: Age of recipient contract based on code size (0 for regular wallets)</p>
-                </div>
-                <div className="p-3 bg-white rounded-lg border border-blue-100">
-                  <span className="font-semibold text-blue-800">is_contract_creation</span>
-                  <p className="text-gray-600 mt-1">⚙️ DETECTED: Whether creating new contract (1) or not (0)</p>
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-xs text-yellow-800">
-                <strong>Note:</strong> The model uses 9 features total. Some are what you entered (amount, gas_price), 
-                while others are automatically calculated, estimated, or fetched from the blockchain to match the 
-                training data format. Features marked with ⚙️ are auto-generated.
-              </p>
-            </div>
-          </div>
-
-          {/* Causal Factors (CC-SHAP) */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              🧠 Causal Factors (CC-SHAP Analysis)
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              These are the TRUE CAUSES of the risk score (not just correlations):
-            </p>
-            <div className="space-y-3">
+          {/* Causal factors */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-slate-900">Causal factors (CC-SHAP)</h3>
+            <p className="mt-1 text-sm text-slate-600">The true causes of the risk score — not just correlations.</p>
+            <div className="mt-4 space-y-3">
               {result.causal_factors.map((factor, i) => (
-                <div key={i} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-semibold">{factor.feature}</span>
-                    <span className={`text-sm ${factor.contribution > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                <div key={i} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="mb-1 flex items-center justify-between">
+                    <span className="font-medium text-slate-900">{factor.feature}</span>
+                    <span className={`text-sm font-medium ${factor.contribution > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                       {factor.contribution > 0 ? '↑' : '↓'} {Math.abs(factor.contribution).toFixed(3)}
                     </span>
                   </div>
-                  <div className="text-sm text-gray-600">
-                    Value: {factor.value} • {factor.impact}
-                  </div>
+                  <div className="text-sm text-slate-600">Value: {factor.value} • {factor.impact}</div>
                 </div>
               ))}
             </div>
@@ -286,82 +186,87 @@ export default function PreventPage() {
 
           {/* Counterfactuals */}
           {result.counterfactuals.length > 0 && (
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <TrendingDown className="w-6 h-6 text-green-600" />
-                How to Reduce Risk (Counterfactual Recommendations)
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+                <TrendingDown className="h-5 w-5 text-emerald-600" />
+                How to reduce risk
               </h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Try these adjustments to lower your fraud risk:
-              </p>
-              <div className="space-y-4">
+              <p className="mt-1 text-sm text-slate-600">Try these adjustments to lower your fraud risk.</p>
+              <div className="mt-4 space-y-3">
                 {result.counterfactuals.map((cf, i) => (
-                  <div key={i} className="p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-200">
-                    <div className="flex justify-between items-start mb-2">
+                  <div key={i} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
-                        <p className="font-semibold text-lg">{cf.scenario}</p>
-                        <p className="text-sm text-gray-700 mt-1">{cf.recommendation}</p>
+                        <p className="font-semibold text-slate-900">{cf.scenario}</p>
+                        <p className="mt-1 text-sm text-slate-600">{cf.recommendation}</p>
                       </div>
-                      <div className="text-right ml-4">
-                        <div className="text-2xl font-bold text-green-600">
-                          {cf.new_risk}%
-                        </div>
-                        <div className="text-sm text-green-700">
-                          ↓ {cf.risk_change}% lower
-                        </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-emerald-600">{cf.new_risk}%</div>
+                        <div className="text-sm text-emerald-700">↓ {cf.risk_change}% lower</div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className={`text-xs px-2 py-1 rounded ${
-                        cf.feasibility === 'High' ? 'bg-green-100 text-green-800' :
-                        cf.feasibility === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        Feasibility: {cf.feasibility}
-                      </span>
-                    </div>
+                    <span
+                      className={`mt-2 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
+                        cf.feasibility === 'High' ? 'bg-emerald-100 text-emerald-800'
+                        : cf.feasibility === 'Medium' ? 'bg-amber-100 text-amber-800'
+                        : 'bg-red-100 text-red-800'
+                      }`}
+                    >
+                      Feasibility: {cf.feasibility}
+                    </span>
                   </div>
                 ))}
               </div>
-              
-              <div className="mt-6 p-4 bg-blue-100 border border-blue-300 rounded-lg">
-                <p className="text-sm text-blue-900">
-                  💡 <strong>Tip:</strong> Adjust your transaction parameters above based on these recommendations, 
-                  then click "Check Safety" again to see the updated risk score!
-                </p>
+              <div className="mt-5 rounded-lg border border-indigo-100 bg-indigo-50 p-3 text-sm text-indigo-900">
+                Adjust the parameters above based on these recommendations, then check again to see the updated risk score.
               </div>
             </div>
           )}
 
-          {/* Action Buttons */}
+          {/* Actions */}
           <div className="flex gap-4">
             <button
               onClick={checkBeforeSend}
-              className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              className="flex-1 rounded-lg border border-slate-300 bg-white py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100"
             >
-              🔄 Re-Check After Adjustments
+              Re-check after adjustments
             </button>
             {result.safe_to_send && (
-              <button
-                className="flex-1 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
-              >
-                ✅ Proceed to MetaMask
+              <button className="flex-1 rounded-lg bg-emerald-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-700">
+                Proceed to MetaMask
               </button>
             )}
           </div>
         </div>
       )}
 
-      {/* Instructions */}
-      <div className="mt-8 bg-gray-50 rounded-lg p-6">
-        <h3 className="font-semibold text-lg mb-3">How to Use This Tool:</h3>
-        <ol className="space-y-2 text-sm text-gray-700">
-          <li>1. <strong>Before</strong> signing a transaction in MetaMask, copy the details (address, amount, gas)</li>
-          <li>2. Paste them into the form above and click "Check Safety"</li>
-          <li>3. Review the risk score and causal factors (CC-SHAP shows WHY it's risky)</li>
-          <li>4. If risky, follow the counterfactual recommendations to adjust parameters</li>
-          <li>5. Re-check until the risk is acceptable</li>
-          <li>6. Only then sign the transaction in MetaMask</li>
+      {/* Feature reference */}
+      <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h3 className="text-lg font-semibold text-slate-900">Understanding the analysis features</h3>
+        <p className="mt-1 text-sm text-slate-600">
+          The model uses 9 features. Some come from your input; others are calculated, estimated, or fetched
+          from the blockchain to match the training format.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {FEATURE_NOTES.map((f) => (
+            <div key={f.name} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <span className="font-mono text-sm font-semibold text-indigo-700">{f.name}</span>
+              <p className="mt-1 text-sm text-slate-600">{f.note}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* How to use */}
+      <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h3 className="text-lg font-semibold text-slate-900">How to use this tool</h3>
+        <ol className="mt-3 space-y-2 text-sm text-slate-600">
+          <li>1. Before signing in MetaMask, copy the transaction details (address, amount, gas).</li>
+          <li>2. Paste them into the form above and click “Check safety”.</li>
+          <li>3. Review the risk score and causal factors (CC-SHAP shows why it’s risky).</li>
+          <li>4. If risky, follow the counterfactual recommendations to adjust parameters.</li>
+          <li>5. Re-check until the risk is acceptable.</li>
+          <li>6. Only then sign the transaction in MetaMask.</li>
         </ol>
       </div>
     </div>

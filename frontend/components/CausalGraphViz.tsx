@@ -156,8 +156,8 @@ export default function CausalGraphViz() {
     return (
       <div className="flex items-center justify-center h-[600px] bg-gray-50 rounded-lg">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading causal graph...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-slate-600">Loading causal graph...</p>
         </div>
       </div>
     );
@@ -171,7 +171,7 @@ export default function CausalGraphViz() {
           <p className="text-gray-600 mt-2">{error}</p>
           <button
             onClick={fetchCausalGraph}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
           >
             Retry
           </button>
