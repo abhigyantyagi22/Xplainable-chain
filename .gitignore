@@ -100,3 +100,7 @@ PINATA_SETUP.md
 POLYGONSCAN_SETUP.md
 PROJECT_STATUS.md
 backend/README.md
+
+# Next.js / TS build artifacts
+frontend/tsconfig.tsbuildinfo
+*.tsbuildinfo
