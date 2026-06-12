@@ -12,6 +12,7 @@ const links = [
   { href: '/analyze', label: 'Analyze' },
   { href: '/analyze/causal', label: 'Causal AI' },
   { href: '/dashboard', label: 'Dashboard' },
+  { href: '/about', label: 'About' },
 ];
 
 export default function Navbar() {
