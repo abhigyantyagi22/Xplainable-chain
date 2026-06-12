@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { AlertTriangle, CheckCircle, Info, TrendingDown, ShieldCheck } from 'lucide-react'
 import { apiPost } from '@/lib/api'
+import Reveal from '@/components/Reveal'
 
 interface CausalFactor {
   feature: string
@@ -90,7 +91,7 @@ export default function PreventPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-8 animate-enter">
         <div className="flex items-center gap-3">
           <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
             <ShieldCheck className="h-6 w-6" />
@@ -107,7 +108,7 @@ export default function PreventPage() {
       </div>
 
       {/* Form */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+      <Reveal className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <h2 className="text-lg font-semibold text-slate-900">Transaction details</h2>
         <div className="mt-5 space-y-4">
           <div>
@@ -143,16 +144,16 @@ export default function PreventPage() {
           <button
             onClick={checkBeforeSend}
             disabled={loading}
-            className="w-full rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="tappable w-full rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
           >
             {loading ? 'Analyzing…' : 'Check safety before sending'}
           </button>
         </div>
-      </div>
+      </Reveal>
 
       {/* Results */}
       {result && (
-        <div className="mt-6 space-y-6">
+        <Reveal className="mt-6 space-y-6">
           {/* Risk score */}
           <div className={`rounded-2xl border p-6 ${riskTone(result.risk_score)}`}>
             <div className="flex items-center gap-4">
@@ -227,21 +228,21 @@ export default function PreventPage() {
           <div className="flex gap-4">
             <button
               onClick={checkBeforeSend}
-              className="flex-1 rounded-lg border border-slate-300 bg-white py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+              className="tappable flex-1 rounded-lg border border-slate-300 bg-white py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
             >
               Re-check after adjustments
             </button>
             {result.safe_to_send && (
-              <button className="flex-1 rounded-lg bg-emerald-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-700">
+              <button className="tappable flex-1 rounded-lg bg-emerald-600 py-3 text-sm font-semibold text-white hover:bg-emerald-700">
                 Proceed to MetaMask
               </button>
             )}
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* Feature reference */}
-      <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <Reveal className="mt-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h3 className="text-lg font-semibold text-slate-900">Understanding the analysis features</h3>
         <p className="mt-1 text-sm text-slate-600">
           The model uses 9 features. Some come from your input; others are calculated, estimated, or fetched
@@ -255,10 +256,10 @@ export default function PreventPage() {
             </div>
           ))}
         </div>
-      </div>
+      </Reveal>
 
       {/* How to use */}
-      <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <Reveal className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h3 className="text-lg font-semibold text-slate-900">How to use this tool</h3>
         <ol className="mt-3 space-y-2 text-sm text-slate-600">
           <li>1. Before signing in MetaMask, copy the transaction details (address, amount, gas).</li>
@@ -268,7 +269,7 @@ export default function PreventPage() {
           <li>5. Re-check until the risk is acceptable.</li>
           <li>6. Only then sign the transaction in MetaMask.</li>
         </ol>
-      </div>
+      </Reveal>
     </div>
   )
 }

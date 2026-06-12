@@ -56,4 +56,70 @@
   body {
     @apply bg-background text-foreground;
   }
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* ── Motion ───────────────────────────────────────────────────────────────── */
+@layer utilities {
+  @keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* Page-load entrance (used on headings / first paint) */
+  .animate-enter {
+    animation: fade-in-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Scroll-reveal base + revealed states (toggled by the Reveal component) */
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: opacity, transform;
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Clean press feedback for buttons / clickable cards */
+  .tappable {
+    transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.15s ease;
+  }
+  .tappable:active {
+    transform: scale(0.97);
+  }
+
+  /* Subtle hover lift for cards */
+  .lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .lift:hover {
+    transform: translateY(-3px);
+  }
+}
+
+/* Respect users who prefer less motion */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .animate-enter,
+  .reveal,
+  .reveal.is-visible {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .tappable:active,
+  .lift:hover {
+    transform: none !important;
+  }
 }

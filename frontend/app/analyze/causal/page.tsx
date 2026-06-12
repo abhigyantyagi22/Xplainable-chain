@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import CausalGraphViz from '@/components/CausalGraphViz';
 import { apiGet, apiPost } from '@/lib/api';
+import Reveal from '@/components/Reveal';
 
 export default function CausalAnalysisPage() {
   const [analysisResult, setAnalysisResult] = useState<any>(null);
@@ -116,7 +117,7 @@ export default function CausalAnalysisPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-6 animate-enter">
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">Causal Explainable AI</h1>
         <p className="mt-2 text-slate-600">
           Beyond correlation — identify the true causal relationships behind a fraud prediction.
@@ -124,22 +125,22 @@ export default function CausalAnalysisPage() {
       </div>
 
       {/* Explainer */}
-      <div className="mb-8 rounded-2xl bg-slate-900 p-6 text-slate-200">
+      <Reveal className="mb-8 rounded-2xl bg-slate-900 p-6 text-slate-200">
         <h2 className="text-lg font-semibold text-white">How this differs from SHAP &amp; LIME</h2>
         <p className="mt-2 text-sm leading-relaxed text-slate-300">
           Traditional correlation-based methods tell you which features move together with the outcome.
           Causal inference goes further: it estimates genuine cause-and-effect, controls for confounders,
           and flags spurious correlations that would otherwise mislead a decision.
         </p>
-      </div>
+      </Reveal>
 
       {/* Causal graph */}
-      <div className="mb-8">
+      <Reveal className="mb-8">
         <CausalGraphViz />
-      </div>
+      </Reveal>
 
       {/* Analysis form */}
-      <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <Reveal className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">Run causal analysis</h2>
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
@@ -159,7 +160,7 @@ export default function CausalAnalysisPage() {
                 type="button"
                 onClick={handleFetchBlockchainData}
                 disabled={fetchingData || !formData.transaction_hash}
-                className="whitespace-nowrap rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                className="tappable whitespace-nowrap rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {fetchingData ? 'Fetching…' : 'Fetch data'}
               </button>
@@ -202,7 +203,7 @@ export default function CausalAnalysisPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="tappable w-full rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
           >
             {loading ? 'Analyzing…' : 'Perform causal analysis'}
           </button>
@@ -213,11 +214,11 @@ export default function CausalAnalysisPage() {
             <p className="text-sm font-medium text-red-700">Error: {error}</p>
           </div>
         )}
-      </div>
+      </Reveal>
 
       {/* Results */}
       {analysisResult && (
-        <div className="space-y-6">
+        <Reveal className="space-y-6">
           {/* Causal effects */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-slate-900">Causal effects (ACE)</h3>
@@ -331,7 +332,7 @@ export default function CausalAnalysisPage() {
             <h3 className="text-lg font-semibold text-slate-900">Interpretation</h3>
             <p className="mt-2 whitespace-pre-line text-slate-700">{analysisResult.interpretation}</p>
           </div>
-        </div>
+        </Reveal>
       )}
     </div>
   );

@@ -5,6 +5,7 @@ import { useAccount } from 'wagmi';
 import Link from 'next/link';
 import { Loader2, AlertTriangle, CheckCircle, ShieldAlert, ArrowRight } from 'lucide-react';
 import { apiPost } from '@/lib/api';
+import Reveal from '@/components/Reveal';
 
 export default function AnalyzePage() {
   const { isConnected } = useAccount();
@@ -32,7 +33,7 @@ export default function AnalyzePage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <div className="mb-2">
+      <div className="mb-2 animate-enter">
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">Analyze a transaction</h1>
         <p className="mt-2 text-slate-600">
           Enter a confirmed transaction hash to assess its fraud risk and see the explanation.
@@ -42,7 +43,7 @@ export default function AnalyzePage() {
       {/* Causal AI cross-link */}
       <Link
         href="/analyze/causal"
-        className="mt-6 flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+        className="lift tappable mt-6 flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md"
       >
         <div>
           <p className="text-sm font-semibold text-slate-900">Want deeper insight?</p>
@@ -54,7 +55,7 @@ export default function AnalyzePage() {
       </Link>
 
       {/* Form */}
-      <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+      <Reveal className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="space-y-5">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">Blockchain network</label>
@@ -105,11 +106,11 @@ export default function AnalyzePage() {
             </div>
           )}
         </div>
-      </div>
+      </Reveal>
 
       {/* Result */}
       {result && (
-        <div className="mt-6 space-y-4">
+        <Reveal className="mt-6 space-y-4">
           {screening?.flagged && (
             <div className="flex items-start gap-3 rounded-xl border border-red-300 bg-red-50 p-4">
               <ShieldAlert className="mt-0.5 h-6 w-6 flex-shrink-0 text-red-500" />
@@ -181,7 +182,7 @@ export default function AnalyzePage() {
               </div>
             )}
           </div>
-        </div>
+        </Reveal>
       )}
     </div>
   );

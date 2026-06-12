@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { TrendingUp, AlertTriangle, Activity, Clock, Zap, ShieldCheck } from 'lucide-react';
 import { apiGet } from '@/lib/api';
+import Reveal from '@/components/Reveal';
 
 export default function DashboardPage() {
   const [stats, setStats]           = useState<any>(null);
@@ -41,7 +42,7 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-      <div className="mb-8">
+      <div className="mb-8 animate-enter">
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard</h1>
         <p className="mt-2 text-slate-600">Analysis history and live system metrics.</p>
       </div>
@@ -56,16 +57,16 @@ export default function DashboardPage() {
       ) : (
         <>
           {/* Stats */}
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <Reveal className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard icon={<Activity className="h-5 w-5" />} label="Total analyzed" value={stats?.total ?? 0} tone="indigo" />
             <StatCard icon={<AlertTriangle className="h-5 w-5" />} label="Malicious" value={stats?.malicious ?? 0} tone="red" />
             <StatCard icon={<ShieldCheck className="h-5 w-5" />} label="Legitimate" value={stats?.legitimate ?? 0} tone="emerald" />
             <StatCard icon={<TrendingUp className="h-5 w-5" />} label="Avg risk" value={stats?.avgRisk ?? 0} tone="slate" />
-          </div>
+          </Reveal>
 
           {/* Live metrics */}
           {metrics && (
-            <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <Reveal className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
                 <Zap className="h-5 w-5 text-amber-500" />
                 Live metrics
@@ -98,11 +99,11 @@ export default function DashboardPage() {
                   {alert.message}
                 </div>
               )}
-            </div>
+            </Reveal>
           )}
 
           {/* Transaction list */}
-          <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <Reveal className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900">
               <Clock className="h-5 w-5 text-slate-400" />
               Recent transactions
@@ -113,7 +114,7 @@ export default function DashboardPage() {
                 <p className="text-slate-500">No transactions analyzed yet.</p>
                 <Link
                   href="/analyze"
-                  className="mt-4 inline-block rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
+                  className="tappable mt-4 inline-block rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
                 >
                   Analyze your first transaction
                 </Link>
@@ -158,7 +159,7 @@ export default function DashboardPage() {
                 ))}
               </div>
             )}
-          </div>
+          </Reveal>
         </>
       )}
     </div>
@@ -175,7 +176,7 @@ const toneStyles: Record<string, { bg: string; text: string }> = {
 function StatCard({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: React.ReactNode; tone: string }) {
   const s = toneStyles[tone] ?? toneStyles.slate;
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="lift rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md">
       <div className="flex items-center gap-2">
         <span className={`inline-flex h-9 w-9 items-center justify-center rounded-lg ${s.bg} ${s.text}`}>{icon}</span>
         <h3 className="text-sm font-medium text-slate-500">{label}</h3>
